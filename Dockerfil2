@@ -1,0 +1,56 @@
+# Use the official Liquibase image as base
+FROM docker.io/library/liquibase AS base
+
+USER root
+
+# Install OpenJDK 17 depending on base distro (Liquibase images are Debian-based)
+RUN if [ -x "$(command -v apk)" ]; then \
+      echo "Detected Alpine Linux. Installing OpenJDK 17 with apk..." && \
+      apk add --no-cache openjdk17; \
+    elif [ -x "$(command -v apt-get)" ]; then \
+      echo "Detected Debian/Ubuntu. Installing OpenJDK 17 with apt-get..." && \
+      apt-get update && \
+      apt-get install -y --no-install-recommends openjdk-17-jdk ca-certificates && \
+      rm -rf /var/lib/apt/lists/*; \
+    else \
+      echo "Error: Unsupported package manager (neither apk nor apt-get found)." >&2; \
+      exit 1; \
+    fi
+
+# --- Override Java version environment from Liquibase base image (which uses Java 21) ---
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH=$JAVA_HOME/bin:$PATH
+
+# Create directory for custom JARs (e.g., JDBC drivers)
+RUN mkdir -p /liquibase/lib
+
+# Copy your local JAR files into the image
+# Make sure your Docker build context contains a folder called 'lib' with your .jar files
+COPY lib/*.jar /liquibase/lib/
+
+# Verify Java version, Liquibase version, and JAR presence
+RUN echo "Verifying environment setup..." && \
+    echo "JAVA_HOME=${JAVA_HOME}" && \
+    java -version && javac -version && \
+    echo "Liquibase version:" && liquibase --version && \
+    echo "Listing /liquibase/lib contents:" && ls -lh /liquibase/lib && \
+    echo "Checking BigQuery JAR version (if possible):" && \
+    for jar in /liquibase/lib/*.jar; do \
+      echo "Inspecting $jar ..."; \
+      unzip -p "$jar" META-INF/MANIFEST.MF | grep -E 'Implementation-Version|Bundle-Version|Specification-Version' || echo "No version info found"; \
+    done
+
+# Switch back to liquibase user for runtime
+USER liquibase
+
+# Set default working directory
+WORKDIR /liquibase/changelogs
+
+
+.
+├── Dockerfile
+├── lib/
+│   ├── bigquery-connector.jar
+│   ├── another-driver.jar
+└── changelogs/
+    └── changelog.xml
