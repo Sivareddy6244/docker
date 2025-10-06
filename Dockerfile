@@ -1,38 +1,35 @@
-
+# Use the official Liquibase image as base
+FROM docker.io/library/liquibase AS base
 
 USER root
 
-# Set environment variables for the Java installation.
-# Using OpenJDK 17 as an example. Adjust the version as needed.
-
-# Install JDK and dynamically set JAVA_HOME in a single layer.
-# This is more robust than hardcoding paths as it finds the actual installation directory.
+# Install OpenJDK 17 depending on base distro (Liquibase images are Debian-based)
 RUN if [ -x "$(command -v apk)" ]; then \
-      # Alpine Linux
-      echo "Detected Alpine Linux. Installing OpenJDK with apk." && \
-      apk add --no-cache openjdk17 && \
-      export JAVA_HOME=/usr/lib/jvm/java-17-openjdk && \
-      echo "export JAVA_HOME=${JAVA_HOME}" > /etc/profile.d/jdk.sh && \
-      echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> /etc/profile.d/jdk.sh; \
+      echo "Detected Alpine Linux. Installing OpenJDK 17 with apk..." && \
+      apk add --no-cache openjdk17; \
     elif [ -x "$(command -v apt-get)" ]; then \
-      # Debian/Ubuntu
-      echo "Detected Debian-based Linux. Installing OpenJDK with apt-get." && \
+      echo "Detected Debian/Ubuntu. Installing OpenJDK 17 with apt-get..." && \
       apt-get update && \
       apt-get install -y --no-install-recommends openjdk-17-jdk ca-certificates && \
-      export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java)))) && \
-      echo "export JAVA_HOME=${JAVA_HOME}" > /etc/profile.d/jdk.sh && \
-      echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> /etc/profile.d/jdk.sh && \
       rm -rf /var/lib/apt/lists/*; \
     else \
-      echo "Error: Unsupported package manager. Neither apk nor apt-get found." >&2; \
+      echo "Error: Unsupported package manager (neither apk nor apt-get found)." >&2; \
       exit 1; \
     fi
 
-# Verify the installation
-# The profile script is sourced automatically by the shell.
-RUN . /etc/profile && java -version && javac -version && liquibase --version
+# --- Override Java version environment from Liquibase base image (which uses Java 21) ---
+# Adjust for Debian/Ubuntu (liquibase official images use Debian by default)
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH=$JAVA_HOME/bin:$PATH
 
+# (Optional) Verify that the correct Java version is active
+RUN echo "Verifying Java version..." && \
+    echo "JAVA_HOME=${JAVA_HOME}" && \
+    which java && java -version && javac -version && \
+    echo "Liquibase version:" && liquibase --version
+
+# Switch back to liquibase user (non-root for best practice)
 USER liquibase
 
-# Set the working directory (optional, but good practice)
+# Set default working directory
 WORKDIR /liquibase/changelogs
