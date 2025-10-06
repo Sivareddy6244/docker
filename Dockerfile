@@ -30,6 +30,7 @@ RUN if [ -x "$(command -v apk)" ]; then \
 # Verify the installation
 RUN java -version
 RUN javac -version
+RUN liquibase --version
 
 
 USER liquibase
