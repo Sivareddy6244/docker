@@ -2,31 +2,19 @@ FROM artifactory-saas.mtb.com/mtb-dacsker-ga/mtb-ubi8-openjdk21.0.3.53
 
 USER root
 
-# Install required packages (without --no-install-recommends)
 RUN yum -y update && \
     yum install -y ca-certificates unzip && \
     update-ca-trust extract
 
-# Copy the pre-downloaded Liquibase tar.gz into the image
 COPY liquibase-4.27.0.tar.gz .
 
 RUN mkdir -p /opt/liquibase && \
-    tar -xzf liquibase-5.0.1.tar.gz -C /opt/liquibase && \
-    ln -s /opt/liquibase/liquibase /usr/local/bin/liquibase && \
-    rm liquibase-5.0.1.tar.gz
-
-# Extract and install Liquibase
-# RUN tar -xzf liquibase-4.27.0.tar.gz && \
-#     mv liquibase /opt/liquibase && \
-#     ln -s /opt/liquibase/liquibase /usr/local/bin/liquibase && \
-#     rm liquibase-4.27.0.tar.gz
+    tar -xzf liquibase-4.27.0.tar.gz -C /opt/liquibase && \
+    ln -s /opt/liquibase/liquibase/liquibase /usr/local/bin/liquibase && \
+    rm liquibase-4.27.0.tar.gz
 
 ENV PATH="/opt/liquibase:${PATH}"
 
-# Optionally set working directory
 WORKDIR /workspace
 
-# Optionally set a default command
 CMD ["liquibase", "--version"]
-
-
