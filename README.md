@@ -13,7 +13,7 @@ docker push mycompany.jfrog.io/artifactory/my-docker-virtual/my-app:latest
 
 
 
-githubuser6244@gmail.com for further support
+
 
 
 
