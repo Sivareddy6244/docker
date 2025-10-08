@@ -1,3 +1,6 @@
+
+
+
 FROM artifactory-saas.mtb.com/mtb-dacsker-ga/mtb-ubi8-openjdk21.0.3.53
 
 USER root
@@ -18,3 +21,4 @@ ENV PATH="/opt/liquibase:${PATH}"
 WORKDIR /workspace
 
 CMD ["liquibase", "--version"]
+read read.md file issue fix. You will find 
