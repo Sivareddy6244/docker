@@ -21,4 +21,5 @@ ENV PATH="/opt/liquibase:${PATH}"
 WORKDIR /workspace
 
 CMD ["liquibase", "--version"]
-read read.md file issue fix. You will find 
+
+#read read.md file issue fix. You will find 
