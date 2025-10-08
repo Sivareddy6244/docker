@@ -1,0 +1,25 @@
+FROM mycompany.jfrog.io/artifactory/my-docker-virtual/openjdk:17
+
+# Install required packages and update CA certificates
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates wget unzip && \
+    update-ca-certificates
+
+# Download and install Liquibase
+ENV LIQUIBASE_VERSION=4.27.0
+
+RUN wget https://github.com/liquibase/liquibase/releases/download/v${LIQUIBASE_VERSION}/liquibase-${LIQUIBASE_VERSION}.tar.gz && \
+    tar -xzf liquibase-${LIQUIBASE_VERSION}.tar.gz && \
+    mv liquibase /opt/liquibase && \
+    ln -s /opt/liquibase/liquibase /usr/local/bin/liquibase && \
+    rm liquibase-${LIQUIBASE_VERSION}.tar.gz
+
+# Add Liquibase to PATH
+ENV PATH="/opt/liquibase:${PATH}"
+
+# Set working directory (optional)
+WORKDIR /workspace
+
+# Default command (optional)
+CMD ["liquibase", "--version"]
