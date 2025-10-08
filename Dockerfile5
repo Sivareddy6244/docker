@@ -2,9 +2,9 @@ FROM artifactory-saas.mtb.com/mtb-dacsker-ga/mtb-ubi8-openjdk21.0.3.53
 
 USER root
 
-RUN yum -y update && \
-    yum install -y ca-certificates unzip tar && \
-    update-ca-trust extract
+RUN apt-get update -y && \
+    apt-get install -y ca-certificates unzip && \
+    update-ca-certificates
 
 COPY liquibase-5.0.1.tar.gz .
 
@@ -18,5 +18,3 @@ ENV PATH="/opt/liquibase:${PATH}"
 WORKDIR /workspace
 
 CMD ["liquibase", "--version"]
-
-#read read.md file issue fix. You will find 
