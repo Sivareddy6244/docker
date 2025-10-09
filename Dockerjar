@@ -1,0 +1,31 @@
+FROM openjdk:21-jdk-slim
+
+USER root
+
+RUN apt-get update -y && \
+    apt-get install -y ca-certificates unzip && \
+    update-ca-certificates
+
+COPY liquibase-5.0.1.tar.gz .
+
+
+
+
+COPY mssql-jdbc-*.jar .  # <-- add this line to bring the jar into build context
+
+
+
+
+RUN mkdir -p /opt/liquibase && \
+    tar -xzf liquibase-5.0.1.tar.gz -C /opt/liquibase && \
+
+    mv mssql-jdbc-*.jar /opt/liquibase/lib/ && \
+    
+    ln -s /opt/liquibase/liquibase /usr/local/bin/liquibase && \
+    rm liquibase-5.0.1.tar.gz
+
+ENV PATH="/opt/liquibase:${PATH}"
+
+WORKDIR /workspace
+
+CMD ["liquibase", "--version"]
