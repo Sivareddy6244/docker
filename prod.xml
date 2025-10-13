@@ -1,0 +1,22 @@
+<changeSet id="2024-11-08-recreate-testliquibase" author="your_name">
+    <preConditions onFail="HALT">
+        <not>
+            <tableExists tableName="testliquibase"/>
+        </not>
+    </preConditions>
+    <createTable tableName="testliquibase">
+        <column name="CustomerId" type="INT" autoIncrement="true">
+            <constraints primaryKey="true" primaryKeyName="PK_testliquibase" nullable="false"/>
+        </column>
+        <column name="FirstName" type="NVARCHAR(50)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="LastName" type="NVARCHAR(50)">
+            <constraints nullable="false"/>
+        </column>
+        <column name="Phone" type="NVARCHAR(20)"/>
+    </createTable>
+    <rollback>
+        <dropTable tableName="testliquibase"/>
+    </rollback>
+</changeSet>
