@@ -1,43 +1,43 @@
+variables:
+  CI_REGISTRY_URL: "YOUR_JFROG_DOCKER_REGISTRY_URL"
+  JFROG_URL: "YOUR_JFROG_PLATFORM_BASE_URL"
+  JFROG_USERNAME: "$JFROG_USERNAME"
+  JFROG_PASSWORD: "$JFROG_PASSWORD"
+
+  CI_IMAGE_NAME: "$CI_PROJECT_NAME:$CI_COMMIT_SHORT_SHA"
+
 stages:
-  - build
-  - push
+  - build_and_push
   - scan
 
-variables:
-  DOCKER_DRIVER: overlay2
-  IMAGE_TAG: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
-
-# Caching JFrog CLI to speed up builds
-cache:
-  paths:
-    - .jfrog/
-
-before_script:
-  - apt-get update && apt-get install -y curl unzip docker.io
-  # Install JFrog CLI
-  - curl -fL https://releases.jfrog.io/artifactory/jfrog-cli/v2-jf/jfrog-cli-linux-amd64/jfrog > jfrog
-  - chmod +x jfrog && mv jfrog /usr/local/bin/
-  # Configure JFrog CLI
-  - jfrog config add artifactory-server \
-      --url=$JFROG_URL \
-      --user=$JFROG_USERNAME \
-      --password=$JFROG_PASSWORD \
-      --interactive=false
-
-build-image:
-  stage: build
+build_and_push_image:
+  stage: build_and_push
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
   script:
-    - docker build -t $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
+    - echo "Starting Docker Build and Push to Artifactory..."
 
-push-image:
-  stage: push
-  script:
-    - echo "$JFROG_PASSWORD" | docker login $JFROG_URL --username "$JFROG_USERNAME" --password-stdin
-    - docker tag $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA $JFROG_URL/$JFROG_REPO/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
-    - docker push $JFROG_URL/$JFROG_REPO/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - echo "$JFROG_PASSWORD" | docker login "$CI_REGISTRY_URL" -u "$JFROG_USERNAME" --password-stdin
 
-scan-image:
+    - docker build --pull -t "$CI_REGISTRY_URL/$CI_IMAGE_NAME" .
+
+    - docker push "$CI_REGISTRY_URL/$CI_IMAGE_NAME"
+
+    - echo "Successfully built and pushed image: $CI_REGISTRY_URL/$CI_IMAGE_NAME"
+
+jfrog_security_scan:
   stage: scan
+  image: jfrog/jfrog-cli:latest
+  needs: ["build_and_push_image"]
+  when: on_success
   script:
-    # Run JFrog Xray scan on the local image (already built)
-    - jfrog docker scan $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - echo "Starting JFrog Xray Scan..."
+
+    - jfrog rt c artifactory-server --url="$JFROG_URL" --user="$JFROG_USERNAME" --password="$JFROG_PASSWORD" --interactive=false
+
+    - REPO_NAME=$(echo "$CI_REGISTRY_URL" | sed 's/.*\///')
+
+    - jfrog rt scan "$REPO_NAME/$CI_IMAGE_NAME" --fail-build=true
+
+    - echo "JFrog Xray scan completed."
