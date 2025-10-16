@@ -1,0 +1,43 @@
+stages:
+  - build
+  - push
+  - scan
+
+variables:
+  DOCKER_DRIVER: overlay2
+  IMAGE_TAG: "$CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA"
+
+# Caching JFrog CLI to speed up builds
+cache:
+  paths:
+    - .jfrog/
+
+before_script:
+  - apt-get update && apt-get install -y curl unzip docker.io
+  # Install JFrog CLI
+  - curl -fL https://releases.jfrog.io/artifactory/jfrog-cli/v2-jf/jfrog-cli-linux-amd64/jfrog > jfrog
+  - chmod +x jfrog && mv jfrog /usr/local/bin/
+  # Configure JFrog CLI
+  - jfrog config add artifactory-server \
+      --url=$JFROG_URL \
+      --user=$JFROG_USERNAME \
+      --password=$JFROG_PASSWORD \
+      --interactive=false
+
+build-image:
+  stage: build
+  script:
+    - docker build -t $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
+
+push-image:
+  stage: push
+  script:
+    - echo "$JFROG_PASSWORD" | docker login $JFROG_URL --username "$JFROG_USERNAME" --password-stdin
+    - docker tag $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA $JFROG_URL/$JFROG_REPO/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $JFROG_URL/$JFROG_REPO/$DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+
+scan-image:
+  stage: scan
+  script:
+    # Run JFrog Xray scan on the local image (already built)
+    - jfrog docker scan $DOCKER_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
