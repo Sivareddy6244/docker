@@ -2,11 +2,11 @@
 
 ## Overview
 
+The GitLab CI pipeline builds and pushes the customized Liquibase Docker image to our JFrog Artifactory instance. This image is intended to be used as the base for Liquibase jobs in other projects.
+
 This project provides the `Dockerfile` and CI/CD configuration to build a custom Docker image for Liquibase. The purpose of this image is to provide a standardized, ready-to-use environment for running database migrations within our organization's GitLab CI/CD pipelines.
 
-The image is built on a standard UBI 8 base with OpenJDK 21 and includes:
-- Liquibase Core
-- Pre-installed Azure SQL Server JDBC drivers and other necessary dependencies.
+The image is built using a custom OpenJDK 21 base image (`mtb-ubi8-openjdk21.0.3.53`) hosted in our JFrog Artifactory. It includes:
 
 The resulting Docker image is pushed to our JFrog Artifactory instance and is intended to be used as the base image for Liquibase jobs in other projects.
 
