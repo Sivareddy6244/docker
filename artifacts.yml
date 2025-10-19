@@ -1,0 +1,11 @@
+- liquibase update --reports-enabled=true --report-path=./liquibase-pro-report
+    - liquibase tag # Tag AFTER the update has been applied
+    
+  artifacts:
+    paths:
+      - update-report.sql
+      - liquibase-pro-report/
+    when: always
+    expire_in: 1 week
+  tags:
+    - cicd-k8s
