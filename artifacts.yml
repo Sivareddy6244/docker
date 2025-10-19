@@ -1,3 +1,23 @@
+liquibase update --reports-open=true --reports-name=my_update_report.html
+
+
+liquibase checks run --changelog-file=example-changelog.xml --reports-name=checks_run_report.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 - liquibase update --reports-enabled=true --report-path=./liquibase-pro-report
     - liquibase tag # Tag AFTER the update has been applied
     
